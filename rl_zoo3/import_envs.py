@@ -54,6 +54,11 @@ try:
 except ImportError:
     pass
 
+try:
+    import envs
+except ImportError:
+    print("Can not import custom envs")
+
 
 # Register no vel envs
 def create_no_vel_env(env_id: str) -> Callable[[str | None], gym.Env]:
