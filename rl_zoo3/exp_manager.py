@@ -60,6 +60,9 @@ from rl_zoo3.utils import (
     get_wrapper_class,
 )
 
+sys.path.append(os.getcwd())
+from components import AuxRecurrentPPO, CustomCombinedExtractor
+
 
 class ExperimentManager:
     """
