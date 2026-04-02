@@ -4,7 +4,7 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
+import components
 import numpy as np
 import yaml
 from huggingface_sb3 import EnvironmentName
@@ -66,6 +66,12 @@ if __name__ == "__main__":
         help="Layer names to extract internal representations from",
     )
     parser.add_argument("--data-dir", type=str, default="./recorded_data", help="Directory to save data")
+    parser.add_argument(
+        "--aux-target-key",
+        type=str,
+        default="achieved_goal",
+        help="The dictionary key in observations where the true position is stored",
+    )
 
     args = parser.parse_args()
 
@@ -140,18 +146,13 @@ if __name__ == "__main__":
     print(f"Loading {model_path}")
 
     model = ALGOS[algo].load(model_path, env=env, custom_objects=custom_objects, **kwargs)
+    model: components.AuxRecurrentPPO
 
     extractor = RepresentationExtractor(model.policy)
     if args.extract_layers:
         extractor.register_forward_hooks(args.extract_layers)
     else:
         extractor.register_forward_hooks()
-
-    data_recorder = DataRecorder(
-        output_dir=args.data_dir,
-        max_episodes=1,
-        prefix="episode",
-    )
 
     stochastic = args.stochastic or ((is_atari or is_minigrid) and not args.deterministic)
     deterministic = not stochastic
@@ -160,6 +161,18 @@ if __name__ == "__main__":
 
     if video_folder is None:
         video_folder = os.path.join(log_path, "videos")
+
+    # truncate video_folder_path from .
+    relative_path = os.path.relpath(os.path.abspath(video_folder), os.getcwd())
+    video_folder = os.path.join("./recorded_data", relative_path)
+    os.makedirs(video_folder, exist_ok=True)
+    args.data_dir = video_folder
+
+    data_recorder = DataRecorder(
+        output_dir=args.data_dir,
+        max_episodes=1,
+        prefix="episode",
+    )
 
     env = VecVideoRecorder(
         env,
@@ -175,15 +188,22 @@ if __name__ == "__main__":
     lstm_states = None
     episode_starts = np.ones((env.num_envs,), dtype=bool)
     all_activations = []
+    all_pred_pos = []
+    all_true_pos = []
 
     try:
         for step in range(video_length):
-            action, lstm_states = model.predict(
+            action, lstm_states, pred_pos = model.predict_with_aux(
                 obs,
                 state=lstm_states,
                 episode_start=episode_starts,
                 deterministic=deterministic,
             )
+
+            all_pred_pos.append(pred_pos.copy())
+            if isinstance(obs, dict) and args.aux_target_key in obs:
+                all_true_pos.append(obs[args.aux_target_key].copy())
+
             if not args.no_render:
                 env.render()
 
@@ -209,6 +229,15 @@ if __name__ == "__main__":
     if all_activations:
         print(f"Extracted activations from {len(all_activations)} timesteps")
         torch.save(all_activations, os.path.join(video_folder, "activations.pt"))
+        print(f"Extracted activations saved to {video_folder}/activations.pt")
 
     if data_recorder.all_episodes:
         print(f"Saved episode data with {data_recorder.all_episodes[0]['episode_length']} steps")
+
+    if all_pred_pos:
+        np.savez(
+            os.path.join(video_folder, "positions.npz"),
+            pred_pos=np.array(all_pred_pos),
+            true_pos=np.array(all_true_pos) if all_true_pos else np.array([]),
+        )
+        print(f"Extracted positions from {len(all_pred_pos)} timesteps (saved to {video_folder}/positions.npz)")
