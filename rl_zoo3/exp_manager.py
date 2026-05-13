@@ -61,7 +61,7 @@ from rl_zoo3.utils import (
 )
 
 sys.path.append(os.getcwd())
-from components import AuxRecurrentPPO, CustomCombinedExtractor
+from components import AuxRecurrentPPO, CustomCombinedExtractor, PathIntegrationRecurrentPPO
 
 
 class ExperimentManager:

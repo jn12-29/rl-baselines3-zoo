@@ -1,0 +1,18 @@
+PointMaze:
+  n_envs: 16
+  n_timesteps: !!float 1e6
+  policy: "PathIntegrationMultiInputLstmPolicy"
+  pi_loss_coef: 1.0
+  pi_target_key: "achieved_goal"
+  pi_n_place_cells: 256
+  pi_place_cell_scale: 0.01
+  pi_pos_min: -2.5
+  pi_pos_max: 2.5
+  pi_neurons_seed: 8341
+  policy_kwargs: "dict(
+    features_extractor_class=CustomCombinedExtractor,
+    features_extractor_kwargs=dict(drop_keys=['achieved_goal']),
+    n_lstm_layers=1,
+    lstm_hidden_size=256,
+    pi_bottleneck_dim=256,
+    pi_dropout_rate=0.5)"
