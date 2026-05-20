@@ -23,6 +23,18 @@ def get_obs_array(obs):
     return np.array(obs)
 
 
+def get_rollout_name(name_prefix: str) -> str:
+    if name_prefix.startswith("best-model-"):
+        return "best"
+    if name_prefix.startswith("final-model-"):
+        return "final"
+    if name_prefix.startswith("checkpoint-"):
+        parts = name_prefix.split("-", maxsplit=2)
+        if len(parts) >= 2:
+            return f"checkpoint_{parts[1]}"
+    return name_prefix
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", help="Environment ID", type=EnvironmentName, default="CartPole-v1")
@@ -65,7 +77,7 @@ if __name__ == "__main__":
         default=[],
         help="Layer names to extract internal representations from",
     )
-    parser.add_argument("--data-dir", type=str, default="./recorded_data", help="Directory to save data")
+    parser.add_argument("--data-dir", type=str, default=None, help="Directory to save rollout data")
     parser.add_argument(
         "--aux-target-key",
         type=str,
@@ -159,14 +171,13 @@ if __name__ == "__main__":
 
     raw_env = env.envs[0] if hasattr(env, "envs") else env
 
+    rollout_name = get_rollout_name(name_prefix)
     if video_folder is None:
-        video_folder = os.path.join(log_path, "videos")
-
-    # truncate video_folder_path from .
-    relative_path = os.path.relpath(os.path.abspath(video_folder), os.getcwd())
-    video_folder = os.path.join("./recorded_data", relative_path)
+        video_folder = os.path.join(log_path, "rollouts", rollout_name, "videos")
+    if args.data_dir is None:
+        args.data_dir = os.path.join(log_path, "rollouts", rollout_name, "data")
     os.makedirs(video_folder, exist_ok=True)
-    args.data_dir = video_folder
+    os.makedirs(args.data_dir, exist_ok=True)
 
     data_recorder = DataRecorder(
         output_dir=args.data_dir,
@@ -228,16 +239,16 @@ if __name__ == "__main__":
 
     if all_activations:
         print(f"Extracted activations from {len(all_activations)} timesteps")
-        torch.save(all_activations, os.path.join(video_folder, "activations.pt"))
-        print(f"Extracted activations saved to {video_folder}/activations.pt")
+        torch.save(all_activations, os.path.join(args.data_dir, "activations.pt"))
+        print(f"Extracted activations saved to {args.data_dir}/activations.pt")
 
     if data_recorder.all_episodes:
         print(f"Saved episode data with {data_recorder.all_episodes[0]['episode_length']} steps")
 
     if all_pred_pos:
         np.savez(
-            os.path.join(video_folder, "positions.npz"),
+            os.path.join(args.data_dir, "positions.npz"),
             pred_pos=np.array(all_pred_pos),
             true_pos=np.array(all_true_pos) if all_true_pos else np.array([]),
         )
-        print(f"Extracted positions from {len(all_pred_pos)} timesteps (saved to {video_folder}/positions.npz)")
+        print(f"Extracted positions from {len(all_pred_pos)} timesteps (saved to {args.data_dir}/positions.npz)")

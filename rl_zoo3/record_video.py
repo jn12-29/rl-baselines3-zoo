@@ -13,6 +13,19 @@ from stable_baselines3.common.vec_env import VecVideoRecorder
 from rl_zoo3.exp_manager import ExperimentManager
 from rl_zoo3.utils import ALGOS, StoreDict, create_test_env, get_model_path, get_saved_hyperparams
 
+
+def get_rollout_name(name_prefix: str) -> str:
+    if name_prefix.startswith("best-model-"):
+        return "best"
+    if name_prefix.startswith("final-model-"):
+        return "final"
+    if name_prefix.startswith("checkpoint-"):
+        parts = name_prefix.split("-", maxsplit=2)
+        if len(parts) >= 2:
+            return f"checkpoint_{parts[1]}"
+    return name_prefix
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", help="Environment ID", type=EnvironmentName, default="CartPole-v1")
@@ -137,7 +150,7 @@ if __name__ == "__main__":
     deterministic = not stochastic
 
     if video_folder is None:
-        video_folder = os.path.join(log_path, "videos")
+        video_folder = os.path.join(log_path, "rollouts", get_rollout_name(name_prefix), "videos")
 
     # Note: apparently it renders by default
     env = VecVideoRecorder(

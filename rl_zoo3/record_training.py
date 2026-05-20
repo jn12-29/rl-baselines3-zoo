@@ -45,7 +45,7 @@ if __name__ == "__main__":
     assert os.path.isdir(log_path), f"The {log_path} folder was not found"
 
     if video_folder is None:
-        video_folder = os.path.abspath(os.path.join(log_path, "videos"))
+        video_folder = os.path.abspath(os.path.join(log_path, "rollouts", "training", "videos"))
     shutil.rmtree(video_folder, ignore_errors=True)
     os.makedirs(video_folder, exist_ok=True)
 
