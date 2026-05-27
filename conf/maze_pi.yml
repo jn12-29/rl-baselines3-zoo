@@ -15,4 +15,5 @@ PointMaze:
     n_lstm_layers=1,
     lstm_hidden_size=256,
     pi_bottleneck_dim=256,
-    pi_dropout_rate=0.5)"
+    pi_dropout_rate=0.5,
+    pi_init_state_key='start_pos')"
