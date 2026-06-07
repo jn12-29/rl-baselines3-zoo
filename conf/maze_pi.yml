@@ -3,6 +3,7 @@ PointMaze:
   n_timesteps: !!float 1e6
   policy: "PathIntegrationMultiInputLstmPolicy"
   pi_loss_coef: 1.0
+  pi_first_step_loss_weight: 10.0
   pi_target_key: "achieved_goal"
   pi_n_place_cells: 256
   pi_place_cell_scale: 0.01

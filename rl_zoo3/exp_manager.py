@@ -62,6 +62,7 @@ from rl_zoo3.utils import (
 
 sys.path.append(os.getcwd())
 from components import AuxRecurrentPPO, CustomCombinedExtractor, PathIntegrationRecurrentPPO
+from components.pi_eval_callback import OnlinePIEvalVisualizationCallback
 
 
 class ExperimentManager:
@@ -568,9 +569,18 @@ class ExperimentManager:
                 print("Creating test environment")
 
             save_vec_normalize = SaveVecNormalizeCallback(save_freq=1, save_path=self.params_path)
+            callback_after_eval = None
+            if self.algo == "pi_ppo_lstm":
+                callback_after_eval = OnlinePIEvalVisualizationCallback(
+                    Path(self.save_path) / "pi_eval",
+                    n_eval_episodes=max(1, min(4, self.n_eval_episodes)),
+                    deterministic=self.deterministic_eval,
+                    verbose=self.verbose,
+                )
             eval_callback = EvalCallback(
                 self.create_envs(self.n_eval_envs, eval_env=True),
                 callback_on_new_best=save_vec_normalize,
+                callback_after_eval=callback_after_eval,
                 best_model_save_path=self.save_path,
                 n_eval_episodes=self.n_eval_episodes,
                 log_path=self.save_path,
