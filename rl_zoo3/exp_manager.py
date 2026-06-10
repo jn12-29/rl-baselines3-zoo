@@ -110,6 +110,7 @@ class ExperimentManager:
         verbose: int = 1,
         vec_env_type: str = "dummy",
         n_eval_envs: int = 1,
+        gridscore_positive_activations: bool = False,
         no_optim_plots: bool = False,
         device: th.device | str = "auto",
         config: str | None = None,
@@ -157,6 +158,7 @@ class ExperimentManager:
         self.eval_freq = eval_freq
         self.n_eval_episodes = n_eval_episodes
         self.n_eval_envs = n_eval_envs
+        self.gridscore_positive_activations = bool(gridscore_positive_activations)
 
         self.n_envs = 1  # it will be updated when reading hyperparams
         self.n_actions = 0  # For DDPG/TD3 action noise objects
@@ -575,6 +577,7 @@ class ExperimentManager:
                     Path(self.save_path) / "pi_eval",
                     n_eval_episodes=max(1, min(4, self.n_eval_episodes)),
                     deterministic=self.deterministic_eval,
+                    gridscore_positive_activations=self.gridscore_positive_activations,
                     verbose=self.verbose,
                 )
             eval_callback = EvalCallback(

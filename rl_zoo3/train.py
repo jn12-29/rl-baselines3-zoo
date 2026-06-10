@@ -53,6 +53,12 @@ def train() -> None:
     )
     parser.add_argument("--eval-episodes", help="Number of episodes to use for evaluation", default=5, type=int)
     parser.add_argument("--n-eval-envs", help="Number of environments for evaluation", default=1, type=int)
+    parser.add_argument(
+        "--gridscore-positive-activations",
+        action="store_true",
+        default=False,
+        help="Use ReLU-clipped PI bottleneck activations for PI grid-score analysis.",
+    )
     parser.add_argument("--save-freq", help="Save the model every n steps (if negative, no checkpoint)", default=-1, type=int)
     parser.add_argument(
         "--save-replay-buffer", help="Save the replay buffer too (when applicable)", action="store_true", default=False
@@ -257,6 +263,7 @@ def train() -> None:
         verbose=args.verbose,
         vec_env_type=args.vec_env,
         n_eval_envs=args.n_eval_envs,
+        gridscore_positive_activations=args.gridscore_positive_activations,
         no_optim_plots=args.no_optim_plots,
         device=args.device,
         config=args.conf_file,
